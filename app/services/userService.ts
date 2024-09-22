@@ -1,16 +1,31 @@
-import { SuccessResponse } from '../utility/Response';
+import { plainToClass } from 'class-transformer';
+import { UserRepository } from '../repositorys/userRepository';
+import { ErrorResponse, SuccessResponse } from '../utility/Response';
 import {APIGatewayProxyEventV2} from 'aws-lambda' ;
+import { autoInjectable } from 'tsyringe';
+import { SignupInput } from '../models/dto/SignupInput';
+import { AppValidationError } from '../utility/errors';
 
 
+@autoInjectable()
 export class UserService {
-    constructor(){}
+
+    userRepository: UserRepository
+    constructor(userRepository: UserRepository){
+        this.userRepository = userRepository ;
+    }
 
 
     // User creation, validation and login Section
     async CreateUser(event: APIGatewayProxyEventV2) {
-        const body = event.body ;
-        console.log(body)
-        return SuccessResponse({message: 'User created successfully'});
+        const input = plainToClass(SignupInput, event.body)
+        console.log(input)
+        const error = await AppValidationError(input) ;
+        if (error) return ErrorResponse(404, error);
+
+        // await this.userRepository.createUserOperations() ;
+        
+        return SuccessResponse(input);
     }
 
     async UserLogin(event: APIGatewayProxyEventV2) {

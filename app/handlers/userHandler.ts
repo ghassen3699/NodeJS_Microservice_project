@@ -1,12 +1,15 @@
 import {APIGatewayProxyEventV2} from 'aws-lambda' ;
 import { UserService } from '../services/userService' ;
 import { ErrorResponse } from '../utility/Response';
+import { container} from "tsyringe" ;
 
-const userServiceInstance = new UserService() ;
+const userServiceInstance = container.resolve(UserService);
 
 
 
 export const Signup = async ( event: APIGatewayProxyEventV2 ) => {
+    const requestBody = JSON.parse(event.body) ;
+    console.log(requestBody)
     return userServiceInstance.CreateUser(event) ;
 }
 

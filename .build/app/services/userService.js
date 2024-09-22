@@ -1,4 +1,13 @@
 "use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -10,15 +19,26 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
+const class_transformer_1 = require("class-transformer");
+const userRepository_1 = require("../repositorys/userRepository");
 const Response_1 = require("../utility/Response");
-class UserService {
-    constructor() { }
+const tsyringe_1 = require("tsyringe");
+const SignupInput_1 = require("../models/dto/SignupInput");
+const errors_1 = require("../utility/errors");
+let UserService = class UserService {
+    constructor(userRepository) {
+        this.userRepository = userRepository;
+    }
     // User creation, validation and login Section
     CreateUser(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            const body = event.body;
-            console.log(body);
-            return (0, Response_1.SuccessResponse)({ message: 'User created successfully' });
+            const input = (0, class_transformer_1.plainToClass)(SignupInput_1.SignupInput, event.body);
+            console.log(input);
+            const error = yield (0, errors_1.AppValidationError)(input);
+            if (error)
+                return (0, Response_1.ErrorResponse)(404, error);
+            // await this.userRepository.createUserOperations() ;
+            return (0, Response_1.SuccessResponse)(input);
         });
     }
     UserLogin(event) {
@@ -79,5 +99,9 @@ class UserService {
             return (0, Response_1.SuccessResponse)({ message: 'Edit Payment successfully' });
         });
     }
-}
+};
 exports.UserService = UserService;
+exports.UserService = UserService = __decorate([
+    (0, tsyringe_1.autoInjectable)(),
+    __metadata("design:paramtypes", [userRepository_1.UserRepository])
+], UserService);

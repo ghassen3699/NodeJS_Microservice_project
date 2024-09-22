@@ -12,8 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.Payment = exports.Cart = exports.Profile = exports.Verify = exports.Login = exports.Signup = void 0;
 const userService_1 = require("../services/userService");
 const Response_1 = require("../utility/Response");
-const userServiceInstance = new userService_1.UserService();
+const tsyringe_1 = require("tsyringe");
+const userServiceInstance = tsyringe_1.container.resolve(userService_1.UserService);
 const Signup = (event) => __awaiter(void 0, void 0, void 0, function* () {
+    const requestBody = JSON.parse(event.body);
+    console.log(requestBody);
     return userServiceInstance.CreateUser(event);
 });
 exports.Signup = Signup;

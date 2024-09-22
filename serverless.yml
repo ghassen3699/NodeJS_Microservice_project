@@ -1,10 +1,16 @@
-org: ghassen1
-app: user-service
+org: null
+app: null
 service: user-service
+frameworkVersion: '3' 
 
 provider:
   name: aws
   runtime: nodejs18.x
+  versionFunctions: false
+  stage: "dev"
+  region: "eu-central-1"
+  httpApi:
+    cors: true
 
 functions:
   signup:
