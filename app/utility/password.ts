@@ -5,9 +5,10 @@ export const GetSalt = async () => {
 };
 
 export const GetHashedPassword = async(password: string, salt: string) => {
+    console.log('password:', password, "salt:", salt)
     return await bcrypt.hash(password, salt);
 };
 
 export const ValidatePassword = async(enteredPassword: string, savedPassword: string, salt: string) => {
-    return (await GetHashedPassword(enteredPassword, salt)) === savedPassword;
+    return (await GetHashedPassword(enteredPassword, salt)) == savedPassword;
 };

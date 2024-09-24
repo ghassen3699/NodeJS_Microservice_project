@@ -5,7 +5,7 @@ import {APIGatewayProxyEventV2} from 'aws-lambda' ;
 import { autoInjectable } from 'tsyringe';
 import { SignupInput } from '../models/dto/SignupInput';
 import { AppValidationError } from '../utility/errors';
-import { GetHashedPassword, GetSalt } from 'app/utility/password';
+import { GetHashedPassword, GetSalt } from '../utility/password';
 
 
 @autoInjectable()
@@ -19,23 +19,30 @@ export class UserService {
 
     // User creation, validation and login Section
     async CreateUser(event: APIGatewayProxyEventV2) {
-        const input = plainToClass(SignupInput, event.body)
-        console.log(input)
-        const error = await AppValidationError(input) ;
-        if (error) return ErrorResponse(404, error);
 
-        const salt = await GetSalt()
-        const hashedPassword = await GetHashedPassword(input.password, salt);
+        try {
+            const input = plainToClass(SignupInput, event.body)
+            console.log("event body:",input)
+            const error = await AppValidationError(input) ;
+            if (error) return ErrorResponse(404, error);
 
-        const data = await this.userRepository.createAccount({
-            email: input.email,
-            password: input.password,
-            phone: input.phone,
-            userType: "BUYER",
-            salt: salt
-        }) ;
+            const salt = await GetSalt();
+            const hashedPassword = await GetHashedPassword(input.password, salt);
+
+            const data = await this.userRepository.createAccount({
+                email: input.email,
+                password: hashedPassword,
+                phone: input.phone,
+                userType: "BUYER",
+                salt: salt
+            }) ;
+            
+            return SuccessResponse(data);
+        } catch (error) {
+            console.log(error)
+            return ErrorResponse(500, error);
+        }
         
-        return SuccessResponse({});
     }
 
     async UserLogin(event: APIGatewayProxyEventV2) {

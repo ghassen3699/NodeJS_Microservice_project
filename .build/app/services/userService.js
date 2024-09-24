@@ -25,6 +25,7 @@ const Response_1 = require("../utility/Response");
 const tsyringe_1 = require("tsyringe");
 const SignupInput_1 = require("../models/dto/SignupInput");
 const errors_1 = require("../utility/errors");
+const password_1 = require("../utility/password");
 let UserService = class UserService {
     constructor(userRepository) {
         this.userRepository = userRepository;
@@ -32,13 +33,27 @@ let UserService = class UserService {
     // User creation, validation and login Section
     CreateUser(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            const input = (0, class_transformer_1.plainToClass)(SignupInput_1.SignupInput, event.body);
-            console.log(input);
-            const error = yield (0, errors_1.AppValidationError)(input);
-            if (error)
-                return (0, Response_1.ErrorResponse)(404, error);
-            // await this.userRepository.createUserOperations() ;
-            return (0, Response_1.SuccessResponse)(input);
+            try {
+                const input = (0, class_transformer_1.plainToClass)(SignupInput_1.SignupInput, event.body);
+                console.log("event body:", input);
+                const error = yield (0, errors_1.AppValidationError)(input);
+                if (error)
+                    return (0, Response_1.ErrorResponse)(404, error);
+                const salt = yield (0, password_1.GetSalt)();
+                const hashedPassword = yield (0, password_1.GetHashedPassword)(input.password, salt);
+                const data = yield this.userRepository.createAccount({
+                    email: input.email,
+                    password: hashedPassword,
+                    phone: input.phone,
+                    userType: "BUYER",
+                    salt: salt
+                });
+                return (0, Response_1.SuccessResponse)(data);
+            }
+            catch (error) {
+                console.log(error);
+                return (0, Response_1.ErrorResponse)(500, error);
+            }
         });
     }
     UserLogin(event) {
