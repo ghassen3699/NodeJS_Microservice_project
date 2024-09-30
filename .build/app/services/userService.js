@@ -19,12 +19,9 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UserService = void 0;
-const class_transformer_1 = require("class-transformer");
 const userRepository_1 = require("../repositorys/userRepository");
 const Response_1 = require("../utility/Response");
 const tsyringe_1 = require("tsyringe");
-const SignupInput_1 = require("../models/dto/SignupInput");
-const errors_1 = require("../utility/errors");
 const password_1 = require("../utility/password");
 let UserService = class UserService {
     constructor(userRepository) {
@@ -34,11 +31,7 @@ let UserService = class UserService {
     CreateUser(event) {
         return __awaiter(this, void 0, void 0, function* () {
             try {
-                const input = (0, class_transformer_1.plainToClass)(SignupInput_1.SignupInput, event.body);
-                console.log("event body:", input);
-                const error = yield (0, errors_1.AppValidationError)(input);
-                if (error)
-                    return (0, Response_1.ErrorResponse)(404, error);
+                const input = JSON.parse(event.body);
                 const salt = yield (0, password_1.GetSalt)();
                 const hashedPassword = yield (0, password_1.GetHashedPassword)(input.password, salt);
                 const data = yield this.userRepository.createAccount({
@@ -58,7 +51,20 @@ let UserService = class UserService {
     }
     UserLogin(event) {
         return __awaiter(this, void 0, void 0, function* () {
-            return (0, Response_1.SuccessResponse)({ message: 'User Login successfully' });
+            try {
+                const input = JSON.parse(event.body);
+                const data = yield this.userRepository.findAccount(input.email);
+                const verifyPassword = yield (0, password_1.ValidatePassword)(input.password, data.password, data.salt);
+                if (!verifyPassword) {
+                    throw new Error("Password does not match");
+                }
+                const token = (0, password_1.generateJWT)(data);
+                return (0, Response_1.SuccessResponse)({ token });
+            }
+            catch (error) {
+                console.log(error);
+                return (0, Response_1.ErrorResponse)(500, error);
+            }
         });
     }
     VerifyUser(event) {

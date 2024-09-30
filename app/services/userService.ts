@@ -5,7 +5,7 @@ import {APIGatewayProxyEventV2} from 'aws-lambda' ;
 import { autoInjectable } from 'tsyringe';
 import { SignupInput } from '../models/dto/SignupInput';
 import { AppValidationError } from '../utility/errors';
-import { GetHashedPassword, GetSalt } from '../utility/password';
+import { generateJWT, GetHashedPassword, GetSalt, ValidatePassword } from '../utility/password';
 
 
 @autoInjectable()
@@ -21,11 +21,7 @@ export class UserService {
     async CreateUser(event: APIGatewayProxyEventV2) {
 
         try {
-            const input = plainToClass(SignupInput, event.body)
-            console.log("event body:",input)
-            const error = await AppValidationError(input) ;
-            if (error) return ErrorResponse(404, error);
-
+            const input = JSON.parse(event.body)
             const salt = await GetSalt();
             const hashedPassword = await GetHashedPassword(input.password, salt);
 
@@ -45,8 +41,23 @@ export class UserService {
         
     }
 
+
     async UserLogin(event: APIGatewayProxyEventV2) {
-        return SuccessResponse({message: 'User Login successfully'});
+        try {
+            const input = JSON.parse(event.body)
+
+            const data = await this.userRepository.findAccount(input.email) ;
+            const verifyPassword = await ValidatePassword(input.password, data.password, data.salt) ;
+            if (!verifyPassword){
+                throw new Error("Password does not match")
+            }
+            
+            const token = generateJWT(data) ;
+            return SuccessResponse({token});
+        } catch (error) {
+            console.log(error)
+            return ErrorResponse(500, error);
+        }    
     }
 
     async VerifyUser(event: APIGatewayProxyEventV2) {

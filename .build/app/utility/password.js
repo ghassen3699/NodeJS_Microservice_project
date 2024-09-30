@@ -12,8 +12,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ValidatePassword = exports.GetHashedPassword = exports.GetSalt = void 0;
+exports.VerifyToken = exports.generateJWT = exports.ValidatePassword = exports.GetHashedPassword = exports.GetSalt = void 0;
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const APP_SECRET = "our_app_secret";
 const GetSalt = () => __awaiter(void 0, void 0, void 0, function* () {
     return yield bcrypt_1.default.genSalt();
 });
@@ -27,3 +29,24 @@ const ValidatePassword = (enteredPassword, savedPassword, salt) => __awaiter(voi
     return (yield (0, exports.GetHashedPassword)(enteredPassword, salt)) == savedPassword;
 });
 exports.ValidatePassword = ValidatePassword;
+const generateJWT = (_a) => __awaiter(void 0, [_a], void 0, function* ({ email, user_id, phone, userType }) {
+    return jsonwebtoken_1.default.sign({
+        user_id, email, phone, userType
+    }, APP_SECRET, {
+        expiresIn: "30d",
+    });
+});
+exports.generateJWT = generateJWT;
+const VerifyToken = (token) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        if (!token) {
+            const payload = yield jsonwebtoken_1.default.verify(token.split(" ")[1], APP_SECRET);
+            return payload;
+        }
+    }
+    catch (error) {
+        console.log(error);
+        return false;
+    }
+});
+exports.VerifyToken = VerifyToken;
